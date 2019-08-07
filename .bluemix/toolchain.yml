@@ -24,7 +24,7 @@ template:
           '[' + $env.branch + ']('+ $env.repository + '/tree/' + $env.branch + ')' :
           '[master]('+ $env.repository + '/tree/master)'
 toolchain:
-  name: 'cloud-native-toolchain-tutorial-{{timestamp}}'
+  name: 'ii1302-cloud-native-toolchain-{{timestamp}}'
   template:
     getting_started:
       $ref: "#/messages/template.gettingStarted"
