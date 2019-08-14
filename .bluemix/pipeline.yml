@@ -37,30 +37,20 @@ stages:
     triggers:
       - type: stage
     jobs:
-      - name: Linting
-        type: tester
-        curatedDockerImage: latest
-        script: |-
-          #!/bin/bash
-          tar -xzf node_modules.tar.gz
-          node ./node_modules/gulp/bin/gulp lint
-        enable_tests: true
-        test_file_pattern: 'test/*.xml'
       - name: Unit Tests
         type: tester
         curatedDockerImage: latest
         script: |-
           #!/bin/bash
-          export PATH=/opt/IBM/node-v4.6.0/bin:$PATH
+          export PATH=/opt/IBM/node-v10.16.0/bin:$PATH
           # Karma Unit Test, output file: test/*.xml
           tar -xzf node_modules.tar.gz
-          node ./node_modules/gulp/bin/gulp dev-karma
-          # Mocha Unit Test, output file: test/*.xml
-          node ./node_modules/gulp/bin/gulp dev-mocha
-          # Mocha Api Unit Test, output file: xunit.xml
-          node ./node_modules/mocha/bin/mocha --recursive --reporter xunit-file test/api/ --exit
+          npm test
         enable_tests: true
         test_file_pattern: '*.xml, test/*.xml'
+        coverage_type: 'istanbul'
+        coverage_directory: 'coverage/lcov-report'
+        coverage_file_pattern: 'coverage/coverage-final.json'
   - name: Deploy to Test
     inputs:
       - type: job
@@ -88,13 +78,13 @@ stages:
           #!/bin/bash
           BLUE_APP="$CF_APP-test-blue"
           GREEN_APP="$CF_APP-test-green"
-          cf push "${BLUE_APP}" -n "${CF_APP}-test"
           cf app "${GREEN_APP}" && cf stop "${GREEN_APP}"
+          cf push "${BLUE_APP}" -n "${CF_APP}-test"
           cf app "${GREEN_APP}" && cf delete "${GREEN_APP}" -f
           cf rename "${BLUE_APP}" "${GREEN_APP}"
           export APP_NAME="$GREEN_APP"
           export APP_URL=http://$(cf app $APP_NAME | grep -e urls: -e routes: | awk '{print $2}')
-  - name: 'Run Tests - Performance & Scale'
+  - name: 'Run GUI Tests'
     inputs:
       - type: job
         stage: 'Build'
@@ -106,24 +96,31 @@ stages:
         value: undefined
         type: text	
     jobs:
-      - name: Sauce Labs Tests
+      - name: GUI Tests
         type: tester
-        extension_id: ibm.devops.services.pipeline.saucelabs
-        services:
-          - ${SAUCE_LABS}
-        DL_ASSETS: 'false'
-        SELECT_CMD: custom
-        COMMAND: |-
+        curatedDockerImage: latest
+        script: |-
           #!/bin/bash
+
           tar -xzf node_modules.tar.gz
-          if [[ ${CF_APP} == '' ]];
-          then
-            echo 'Test App is missing!'
-          else
-            npm test
-          fi      
+
+          # install firefox
+          sudo apt-get -y update
+          sudo apt-get -y --force-yes install firefox
+          firefox -v
+          
+          # install gecko-driver
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
+          mkdir bin
+          tar xvzf geckodriver-v0.24.0-linux64.tar.gz -C bin
+          export PATH=$(pwd)/bin:$PATH
+          env
+          
+          # invoke tests here
+          curl $APP_URL
+          npm run gui-test
         enable_tests: true
-        test_file_pattern: '*.xml'        
+        test_file_pattern: '*.xml, test/*.xml'
   - name: Deploy to Prod
     inputs:
       - type: job
@@ -151,8 +148,11 @@ stages:
           #!/bin/bash
           BLUE_APP="$CF_APP-blue"
           GREEN_APP="$CF_APP-green"
+          TEST_APP="$CF_APP-test-green"
+          cf app "${TEST_APP}" && cf stop "${TEST_APP}"
           cf push "${BLUE_APP}" -n "${CF_APP}"
           cf app "${GREEN_APP}" && cf stop "${GREEN_APP}"
+          cf app "${TEST_APP}" && cf start "${TEST_APP}"
           cf app "${GREEN_APP}" && cf delete "${GREEN_APP}" -f
           cf rename "${BLUE_APP}" "${GREEN_APP}"
           export APP_NAME="$GREEN_APP"
