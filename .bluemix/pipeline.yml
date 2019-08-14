@@ -78,8 +78,8 @@ stages:
           #!/bin/bash
           BLUE_APP="$CF_APP-test-blue"
           GREEN_APP="$CF_APP-test-green"
-          cf push "${BLUE_APP}" -n "${CF_APP}-test"
           cf app "${GREEN_APP}" && cf stop "${GREEN_APP}"
+          cf push "${BLUE_APP}" -n "${CF_APP}-test"
           cf app "${GREEN_APP}" && cf delete "${GREEN_APP}" -f
           cf rename "${BLUE_APP}" "${GREEN_APP}"
           export APP_NAME="$GREEN_APP"
