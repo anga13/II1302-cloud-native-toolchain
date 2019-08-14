@@ -37,15 +37,6 @@ stages:
     triggers:
       - type: stage
     jobs:
-      - name: Linting
-        type: tester
-        curatedDockerImage: latest
-        script: |-
-          #!/bin/bash
-          tar -xzf node_modules.tar.gz
-          node ./node_modules/gulp/bin/gulp lint
-        enable_tests: true
-        test_file_pattern: 'test/*.xml'
       - name: Unit Tests
         type: tester
         curatedDockerImage: latest
