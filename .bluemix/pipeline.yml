@@ -66,7 +66,7 @@ stages:
       value: undefined
       type: text	
     jobs:
-      - name: Blue/Green Deploy
+      - name: Deploy
         type: deployer
         target:
           region_id: ${TEST_REGION_ID}
