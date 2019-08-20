@@ -66,7 +66,7 @@ stages:
       value: undefined
       type: text	
     jobs:
-      - name: Blue/Green Deploy
+      - name: Deploy to Test
         type: deployer
         target:
           region_id: ${TEST_REGION_ID}
@@ -76,13 +76,10 @@ stages:
           api_key: ${API_KEY}
         script: |-
           #!/bin/bash
-          BLUE_APP="$CF_APP-test-blue"
-          GREEN_APP="$CF_APP-test-green"
-          cf app "${GREEN_APP}" && cf stop "${GREEN_APP}"
-          cf push "${BLUE_APP}" -n "${CF_APP}-test"
-          cf app "${GREEN_APP}" && cf delete "${GREEN_APP}" -f
-          cf rename "${BLUE_APP}" "${GREEN_APP}"
-          export APP_NAME="$GREEN_APP"
+          TEST_APP="$CF_APP-test"
+          cf app "${TEST_APP}" && cf delete "${TEST_APP}" -f
+          cf push "${TEST_APP}" -n "${TEST_APP}"
+          export APP_NAME="$TEST_APP"
           export APP_URL=http://$(cf app $APP_NAME | grep -e urls: -e routes: | awk '{print $2}')
   - name: 'Run GUI Tests'
     inputs:
@@ -146,18 +143,21 @@ stages:
           api_key: ${API_KEY}
         script: |-
           #!/bin/bash
+
+          # Delete test app
+          TEST_APP="$CF_APP-test"
+          cf app "${TEST_APP}" && cf delete "${TEST_APP}" -f
+
+          # Blue/Green deployment
           BLUE_APP="$CF_APP-blue"
           GREEN_APP="$CF_APP-green"
-          TEST_APP="$CF_APP-test-green"
-          cf app "${TEST_APP}" && cf stop "${TEST_APP}"
           cf push "${BLUE_APP}" -n "${CF_APP}"
           cf app "${GREEN_APP}" && cf stop "${GREEN_APP}"
-          cf app "${TEST_APP}" && cf start "${TEST_APP}"
           cf app "${GREEN_APP}" && cf delete "${GREEN_APP}" -f
           cf rename "${BLUE_APP}" "${GREEN_APP}"
           export APP_NAME="$GREEN_APP"
           export APP_URL=http://$(cf app $APP_NAME | grep -e urls: -e routes: | awk '{print $2}')
-
+          
           # Instant Purging removes content from Fastly immediately so it can be refreshed from your origin servers.
           # The main entry point http://api.fastly.com/ for the API is not needed for an individual URL Instant Purge.
           curl -X PURGE ${APP_URL}
