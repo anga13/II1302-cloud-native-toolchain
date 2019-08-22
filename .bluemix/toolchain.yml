@@ -40,7 +40,6 @@ services:
     parameters:
       services:
         - sample-repo
-        - test
       name: 'sample-{{toolchain.name}}'
       ui-pipeline: true
       configuration:
@@ -48,7 +47,6 @@ services:
           $ref: pipeline.yml
           $refType: text
         env:
-          SAUCE_LABS: test
           SAMPLE_REPO: sample-repo
           CF_APP_NAME: '{{form.pipeline.parameters.app-name}}'
           TEST_SPACE: '{{form.pipeline.parameters.test-space}}'
@@ -59,9 +57,6 @@ services:
           PROD_REGION_ID: '{{form.pipeline.parameters.prod-region}}'
           API_KEY: '{{form.pipeline.parameters.api-key}}'
         execute: true
-  test:
-    service_id: saucelabs
-    $ref: saucelabs.yml
   webide:
     service_id: orion
 form:
