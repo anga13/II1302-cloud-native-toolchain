@@ -65,9 +65,6 @@ services:
   test:
     service_id: saucelabs
     $ref: saucelabs.yml
-  alerting:
-    service_id: pagerduty
-    $ref: pagerduty.yml
   webide:
     service_id: orion
 form:
