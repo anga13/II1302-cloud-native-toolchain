@@ -59,9 +59,6 @@ services:
           PROD_REGION_ID: '{{form.pipeline.parameters.prod-region}}'
           API_KEY: '{{form.pipeline.parameters.api-key}}'
         execute: true
-  messaging:
-    service_id: slack
-    $ref: slack.yml
   test:
     service_id: saucelabs
     $ref: saucelabs.yml
