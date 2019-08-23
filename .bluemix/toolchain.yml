@@ -34,7 +34,7 @@ services:
       repo_url: 'https://github.com/anga13/cloudyappy'
       type: clone
       has_issues: true
-      enable_traceability: true
+      enable_traceability: false
   sample-build:
     service_id: pipeline
     parameters:
